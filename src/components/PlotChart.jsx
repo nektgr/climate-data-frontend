@@ -1,10 +1,22 @@
-import React from "react";
+import React, { useRef } from "react";
 import { Line } from "react-chartjs-2";
-import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend } from "chart.js";
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Tooltip,
+  Legend,
+} from "chart.js";
+import zoomPlugin from "chartjs-plugin-zoom";
 
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend);
+// Register the necessary components and plugins
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend, zoomPlugin);
 
 const PlotChart = ({ data }) => {
+  const chartRef = useRef(null);
+
   const chartData = {
     labels: data.labels, // Array of months or years
     datasets: [
@@ -30,6 +42,21 @@ const PlotChart = ({ data }) => {
         mode: "index",
         intersect: false,
       },
+      zoom: {
+        pan: {
+          enabled: true,
+          mode: "x", // Pan along x-axis
+        },
+        zoom: {
+          wheel: {
+            enabled: true, // Enable zooming with the mouse wheel
+          },
+          pinch: {
+            enabled: true, // Enable zooming on touch devices
+          },
+          mode: "x", // Zoom along x-axis
+        },
+      },
     },
     scales: {
       x: {
@@ -48,10 +75,21 @@ const PlotChart = ({ data }) => {
     },
   };
 
+  const resetZoom = () => {
+    if (chartRef.current) {
+      chartRef.current.resetZoom();
+    }
+  };
+
   return (
     <div>
       <h2>Temperature Data Visualization</h2>
-      <Line data={chartData} options={options} />
+      <Line ref={chartRef} data={chartData} options={options} />
+      <div style={{ marginTop: "10px" }}>
+        <button onClick={resetZoom} style={{ padding: "5px 10px", cursor: "pointer" }}>
+          Reset Zoom
+        </button>
+      </div>
     </div>
   );
 };

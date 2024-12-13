@@ -8,7 +8,7 @@ const App = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await axios.get("http://127.0.0.1:8000/api/api/process/?file_name=IDCJAC0002_066062_Data12.csv");
+        const response = await axios.get("http://127.0.0.1:8000/api/process/?file_name=IDCJAC0002_066062_Data12.csv");
         const data = response.data;
 
         // Process data for Chart.js
