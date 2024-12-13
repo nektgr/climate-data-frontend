@@ -1,33 +1,21 @@
-import React, { useEffect, useState } from "react";
-import axios from "axios";
+import React, { useState } from "react";
+import FileUpload from "./components/FileUpload";
 import PlotChart from "./components/PlotChart";
 
 const App = () => {
-  const [chartData, setChartData] = useState({ labels: [], values: [] });
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await axios.get("http://127.0.0.1:8000/api/process/?file_name=IDCJAC0002_066062_Data12.csv");
-        const data = response.data;
-
-        // Process data for Chart.js
-        const labels = data.years; // X-axis labels (e.g., years)
-        const values = data.yearly_averages; // Y-axis data (e.g., averages)
-
-        setChartData({ labels, values });
-      } catch (error) {
-        console.error("Error fetching chart data:", error);
-      }
-    };
-
-    fetchData();
-  }, []);
+  const [chartData, setChartData] = useState(null);
 
   return (
-    <div>
-      <h1>Climate Data Analysis</h1>
-      <PlotChart data={chartData} />
+    <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
+      <h1 className="text-3xl font-bold mb-6">Climate Data Visualization</h1>
+      <FileUpload setChartData={setChartData} />
+      {chartData ? (
+        <div className="mt-6 w-full max-w-4xl">
+          <PlotChart data={chartData} />
+        </div>
+      ) : (
+        <p className="text-gray-500 mt-6">Upload a file to see the chart.</p>
+      )}
     </div>
   );
 };

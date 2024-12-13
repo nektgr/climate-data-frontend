@@ -18,11 +18,11 @@ const PlotChart = ({ data }) => {
   const chartRef = useRef(null);
 
   const chartData = {
-    labels: data.labels, // Array of months or years
+    labels: data.labels, // Dynamic labels
     datasets: [
       {
-        label: "Average Temperature",
-        data: data.values, // Array of temperatures
+        label: "Yearly Average Temperature",
+        data: data.values, // Dynamic data
         borderColor: "rgba(75,192,192,1)",
         backgroundColor: "rgba(75,192,192,0.2)",
         borderWidth: 2,
@@ -35,43 +35,16 @@ const PlotChart = ({ data }) => {
   const options = {
     responsive: true,
     plugins: {
-      legend: {
-        position: "top",
-      },
-      tooltip: {
-        mode: "index",
-        intersect: false,
-      },
+      legend: { position: "top" },
+      tooltip: { mode: "index", intersect: false },
       zoom: {
-        pan: {
-          enabled: true,
-          mode: "x", // Pan along x-axis
-        },
-        zoom: {
-          wheel: {
-            enabled: true, // Enable zooming with the mouse wheel
-          },
-          pinch: {
-            enabled: true, // Enable zooming on touch devices
-          },
-          mode: "x", // Zoom along x-axis
-        },
+        pan: { enabled: true, mode: "x" },
+        zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: "x" },
       },
     },
     scales: {
-      x: {
-        title: {
-          display: true,
-          text: "Time",
-        },
-      },
-      y: {
-        title: {
-          display: true,
-          text: "Temperature (°C)",
-        },
-        min: 0, // Set based on your data range
-      },
+      x: { title: { display: true, text: "Years" } },
+      y: { title: { display: true, text: "Temperature (°C)" } },
     },
   };
 
@@ -83,15 +56,11 @@ const PlotChart = ({ data }) => {
 
   return (
     <div>
-      <h2>Temperature Data Visualization</h2>
       <Line ref={chartRef} data={chartData} options={options} />
-      <div style={{ marginTop: "10px" }}>
-        <button onClick={resetZoom} style={{ padding: "5px 10px", cursor: "pointer" }}>
-          Reset Zoom
-        </button>
-      </div>
+      <button onClick={resetZoom} className="mt-2 px-4 py-2 bg-blue-500 text-white rounded">
+        Reset Zoom
+      </button>
     </div>
   );
 };
-
 export default PlotChart;
