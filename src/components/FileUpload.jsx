@@ -1,76 +1,100 @@
-import React, { useState } from "react";
-import axios from "axios";
-import PlotChart from "./PlotChart";
+import React, { useRef } from "react";
+import Papa from "papaparse";
 
-const App = () => {
-  const [chartData, setChartData] = useState(null);
-  const [errorMessage, setErrorMessage] = useState("");
+const FileUpload = ({ setChartData, setError }) => {
+  const fileInputRef = useRef(null);
 
-  const handleFileUpload = async (event) => {
-    setErrorMessage(""); // Clear previous errors
+  const handleFileUpload = (event) => {
     const file = event.target.files[0];
-
-    if (!file) {
-      setErrorMessage("Please select a file.");
+    if (!file || file.type !== "text/csv") {
+      setError("Invalid file type. Please upload a valid CSV file.");
       return;
     }
 
-    const formData = new FormData();
-    formData.append("file", file);
+    setChartData(null); // Clear existing chart data
+    setError(null); // Clear existing errors
 
-    try {
-      // Upload file to backend
-      const uploadResponse = await axios.post(
-        "http://127.0.0.1:8000/api/upload/",
-        formData,
-        {
-          headers: { "Content-Type": "multipart/form-data" },
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: (results) => {
+        console.log("Parsed Results:", results);
+
+        const normalizeHeader = (header) => header.trim().toLowerCase();
+        const headers = results.meta.fields.map(normalizeHeader);
+        const requiredHeaders = ["year", "jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+
+        // Check for missing headers
+        const missingHeaders = requiredHeaders.filter((header) => !headers.includes(header));
+        if (missingHeaders.length > 0) {
+          setError(`Missing required columns: ${missingHeaders.join(", ")}.`);
+          return;
         }
-      );
 
-      // Extract only the file name from the response
-      const fileName = uploadResponse.data.file_path.split("/").pop();
+        const labels = [];
+        const values = [];
+        let skippedRows = 0;
 
-      // Process file
-      const processResponse = await axios.get(
-        `http://127.0.0.1:8000/api/process/?file_name=${fileName}`
-      );
+        // Process each row of data
+        results.data.forEach((row) => {
+          const year = row["Year"]?.trim() || row["year"]?.trim();
+          if (!year || isNaN(year)) {
+            skippedRows++;
+            return; // Skip rows with invalid year
+          }
 
-      // Set chart data
-      const { years, yearly_averages } = processResponse.data;
-      setChartData({
-        labels: years,
-        values: yearly_averages,
-      });
-    } catch (error) {
-      setErrorMessage("An error occurred. Please try again.");
-      console.error("Error:", error);
+          requiredHeaders.slice(1).forEach((month, index) => {
+            const value = parseFloat(row[month]?.trim() || row[month.charAt(0).toUpperCase() + month.slice(1)]?.trim());
+            if (!isNaN(value)) {
+              labels.push(`${year}-${String(index + 1).padStart(2, "0")}`);
+              values.push(value);
+            }
+          });
+        });
+
+        if (!labels.length || !values.length) {
+          setError("No valid data found in the CSV file. Ensure all months have numeric values and 'Year' is properly formatted.");
+          return;
+        }
+
+        if (skippedRows > 0) {
+          setError(`${skippedRows} rows were skipped due to invalid data.`);
+        } else {
+          setError(null); // Clear any previous errors
+        }
+
+        setChartData({ labels, values });
+      },
+      error: (err) => {
+        console.error("Error reading file:", err);
+        setError("Error reading the file. Please try again.");
+      },
+    });
+  };
+
+  const handleReset = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ""; // Clear the file input value
     }
   };
 
   return (
-    <div className="p-4">
-      <h1 className="text-2xl font-bold mb-4">Climate Data Visualization</h1>
-
-      {/* File Upload Section */}
-      <div className="mb-4">
-        <input
-          type="file"
-          accept=".csv"
-          onChange={handleFileUpload}
-          className="block mb-2"
-        />
-        {errorMessage && <p className="text-red-500">{errorMessage}</p>}
-      </div>
-
-      {/* Chart Section */}
-      {chartData ? (
-        <PlotChart data={chartData} />
-      ) : (
-        <p className="text-gray-500">Upload a file to visualize data.</p>
-      )}
+    <div>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".csv"
+        onChange={handleFileUpload}
+        style={{ marginBottom: "10px" }}
+      />
+      <button
+        onClick={handleReset}
+        className="px-4 py-2 bg-red-500 text-white rounded shadow hover:bg-red-600 transition"
+      >
+        Reset File Input
+      </button>
     </div>
   );
 };
 
-export default App;
+export default FileUpload;

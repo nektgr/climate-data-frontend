@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -8,45 +8,81 @@ import {
   LineElement,
   Tooltip,
   Legend,
+  Title,
 } from "chart.js";
 import zoomPlugin from "chartjs-plugin-zoom";
 
-// Register the necessary components and plugins
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend, zoomPlugin);
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend, Title, zoomPlugin);
 
-const PlotChart = ({ data }) => {
+const PlotChart = ({ data, isYearly }) => {
+  const [chartData, setChartData] = useState(null);
   const chartRef = useRef(null);
 
-  const chartData = {
-    labels: data.labels, // Dynamic labels
-    datasets: [
-      {
-        label: "Yearly Average Temperature",
-        data: data.values, // Dynamic data
-        borderColor: "rgba(75,192,192,1)",
-        backgroundColor: "rgba(75,192,192,0.2)",
-        borderWidth: 2,
-        pointRadius: 3,
-        tension: 0.4, // Curved lines
-      },
-    ],
+  const calculateYearlyData = (data) => {
+    const yearlyData = {};
+    data.labels.forEach((date, index) => {
+      const year = date.split("-")[0];
+      if (!yearlyData[year]) yearlyData[year] = [];
+      yearlyData[year].push(data.values[index]);
+    });
+
+    const years = Object.keys(yearlyData);
+    const averages = years.map((year) => {
+      const values = yearlyData[year];
+      return values.reduce((sum, value) => sum + value, 0) / values.length;
+    });
+
+    const stddevs = years.map((year, idx) => {
+      const values = yearlyData[year];
+      const mean = averages[idx];
+      return Math.sqrt(values.map((v) => (v - mean) ** 2).reduce((sum, v) => sum + v, 0) / values.length);
+    });
+
+    return { labels: years, values: averages, stddev: stddevs };
   };
 
-  const options = {
-    responsive: true,
-    plugins: {
-      legend: { position: "top" },
-      tooltip: { mode: "index", intersect: false },
-      zoom: {
-        pan: { enabled: true, mode: "x" },
-        zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: "x" },
-      },
-    },
-    scales: {
-      x: { title: { display: true, text: "Years" } },
-      y: { title: { display: true, text: "Temperature (°C)" } },
-    },
-  };
+  useEffect(() => {
+    if (isYearly) {
+      const yearlyData = calculateYearlyData(data);
+      setChartData({
+        labels: yearlyData.labels,
+        datasets: [
+          {
+            label: "Yearly Average Temperature",
+            data: yearlyData.values,
+            borderColor: "blue",
+            fill: false,
+          },
+          {
+            label: "+1σ",
+            data: yearlyData.values.map((v, i) => v + yearlyData.stddev[i]),
+            borderColor: "red",
+            borderDash: [5, 5],
+            fill: false,
+          },
+          {
+            label: "-1σ",
+            data: yearlyData.values.map((v, i) => v - yearlyData.stddev[i]),
+            borderColor: "green",
+            borderDash: [5, 5],
+            fill: false,
+          },
+        ],
+      });
+    } else {
+      setChartData({
+        labels: data.labels,
+        datasets: [
+          {
+            label: "Monthly Temperature",
+            data: data.values,
+            borderColor: "blue",
+            fill: false,
+          },
+        ],
+      });
+    }
+  }, [isYearly, data]);
 
   const resetZoom = () => {
     if (chartRef.current) {
@@ -54,13 +90,51 @@ const PlotChart = ({ data }) => {
     }
   };
 
+  if (!chartData) return null;
+
   return (
     <div>
-      <Line ref={chartRef} data={chartData} options={options} />
-      <button onClick={resetZoom} className="mt-2 px-4 py-2 bg-blue-500 text-white rounded">
+      <Line
+        ref={chartRef}
+        data={chartData}
+        options={{
+          responsive: true,
+          plugins: {
+            legend: { display: true },
+            zoom: {
+              pan: {
+                enabled: true,
+                mode: "x", // Enable panning along the x-axis
+              },
+              zoom: {
+                wheel: { enabled: true }, // Enable zooming with the mouse wheel
+                pinch: { enabled: true }, // Enable zooming with pinch gestures
+                mode: "x", // Enable zooming along the x-axis
+              },
+            },
+          },
+          scales: {
+            x: { title: { display: true, text: isYearly ? "Years" : "Months" } },
+            y: { title: { display: true, text: "Temperature (°C)" } },
+          },
+        }}
+      />
+      <button
+        onClick={resetZoom}
+        style={{
+          marginTop: "10px",
+          padding: "10px",
+          backgroundColor: "#007BFF",
+          color: "white",
+          border: "none",
+          borderRadius: "5px",
+          cursor: "pointer",
+        }}
+      >
         Reset Zoom
       </button>
     </div>
   );
 };
+
 export default PlotChart;
