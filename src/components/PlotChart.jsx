@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -15,74 +15,80 @@ import zoomPlugin from "chartjs-plugin-zoom";
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend, Title, zoomPlugin);
 
 const PlotChart = ({ data, isYearly }) => {
-  const [chartData, setChartData] = useState(null);
   const chartRef = useRef(null);
+  const [chartData, setChartData] = useState(null);
 
   const calculateYearlyData = (data) => {
-    const yearlyData = {};
-    data.labels.forEach((date, index) => {
-      const year = date.split("-")[0];
-      if (!yearlyData[year]) yearlyData[year] = [];
-      yearlyData[year].push(data.values[index]);
+    if (!data.years || !data.yearly_averages || !data.yearly_stddev) return null;
+
+    return {
+      labels: data.years,
+      datasets: [
+        {
+          label: "Yearly Average Temperature",
+          data: data.yearly_averages,
+          borderColor: "blue",
+          borderWidth: 2,
+          fill: false,
+        },
+        {
+          label: "+1σ",
+          data: data.yearly_averages.map((avg, i) => avg + data.yearly_stddev[i]),
+          borderColor: "red",
+          borderDash: [5, 5],
+          borderWidth: 1,
+          fill: false,
+        },
+        {
+          label: "-1σ",
+          data: data.yearly_averages.map((avg, i) => avg - data.yearly_stddev[i]),
+          borderColor: "green",
+          borderDash: [5, 5],
+          borderWidth: 1,
+          fill: false,
+        },
+      ],
+    };
+  };
+
+  const calculateMonthlyData = (data) => {
+    if (!data.monthly_data || !data.years) return null;
+
+    const labels = [];
+    const values = [];
+
+    Object.entries(data.monthly_data).forEach(([month, temps]) => {
+      temps.forEach((temp, i) => {
+        labels.push(`${data.years[i]}-${month}`);
+        values.push(temp);
+      });
     });
 
-    const years = Object.keys(yearlyData);
-    const averages = years.map((year) => {
-      const values = yearlyData[year];
-      return values.reduce((sum, value) => sum + value, 0) / values.length;
-    });
-
-    const stddevs = years.map((year, idx) => {
-      const values = yearlyData[year];
-      const mean = averages[idx];
-      return Math.sqrt(values.map((v) => (v - mean) ** 2).reduce((sum, v) => sum + v, 0) / values.length);
-    });
-
-    return { labels: years, values: averages, stddev: stddevs };
+    return {
+      labels,
+      datasets: [
+        {
+          label: "Monthly Temperature (°C)",
+          data: values,
+          borderColor: "blue",
+          borderWidth: 2,
+          pointRadius: 2,
+          fill: false,
+        },
+      ],
+    };
   };
 
   useEffect(() => {
-    if (isYearly) {
-      const yearlyData = calculateYearlyData(data);
-      setChartData({
-        labels: yearlyData.labels,
-        datasets: [
-          {
-            label: "Yearly Average Temperature",
-            data: yearlyData.values,
-            borderColor: "blue",
-            fill: false,
-          },
-          {
-            label: "+1σ",
-            data: yearlyData.values.map((v, i) => v + yearlyData.stddev[i]),
-            borderColor: "red",
-            borderDash: [5, 5],
-            fill: false,
-          },
-          {
-            label: "-1σ",
-            data: yearlyData.values.map((v, i) => v - yearlyData.stddev[i]),
-            borderColor: "green",
-            borderDash: [5, 5],
-            fill: false,
-          },
-        ],
-      });
-    } else {
-      setChartData({
-        labels: data.labels,
-        datasets: [
-          {
-            label: "Monthly Temperature",
-            data: data.values,
-            borderColor: "blue",
-            fill: false,
-          },
-        ],
-      });
+    if (!data) return;
+
+    const updatedData = isYearly ? calculateYearlyData(data) : calculateMonthlyData(data);
+    if (!updatedData) {
+      console.error("Invalid data structure:", data);
+      return;
     }
-  }, [isYearly, data]);
+    setChartData(updatedData);
+  }, [data, isYearly]);
 
   const resetZoom = () => {
     if (chartRef.current) {
@@ -90,7 +96,7 @@ const PlotChart = ({ data, isYearly }) => {
     }
   };
 
-  if (!chartData) return null;
+  if (!chartData) return <p>Loading chart...</p>;
 
   return (
     <div>
@@ -100,6 +106,14 @@ const PlotChart = ({ data, isYearly }) => {
         options={{
           responsive: true,
           plugins: {
+            tooltip: {
+              callbacks: {
+                label: function (context) {
+                  const value = context.raw;
+                  return `${context.dataset.label}: ${value.toFixed(2)}°C`;
+                },
+              },
+            },
             legend: { display: true },
             zoom: {
               pan: {
@@ -114,22 +128,14 @@ const PlotChart = ({ data, isYearly }) => {
             },
           },
           scales: {
-            x: { title: { display: true, text: isYearly ? "Years" : "Months" } },
+            x: { title: { display: true, text: isYearly ? "Years" : "Year-Month" } },
             y: { title: { display: true, text: "Temperature (°C)" } },
           },
         }}
       />
       <button
         onClick={resetZoom}
-        style={{
-          marginTop: "10px",
-          padding: "10px",
-          backgroundColor: "#007BFF",
-          color: "white",
-          border: "none",
-          borderRadius: "5px",
-          cursor: "pointer",
-        }}
+        className="px-4 py-2 mt-4 bg-blue-500 text-white rounded shadow hover:bg-blue-600 transition"
       >
         Reset Zoom
       </button>
