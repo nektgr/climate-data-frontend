@@ -15,127 +15,156 @@ import zoomPlugin from "chartjs-plugin-zoom";
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend, Title, zoomPlugin);
 
 const PlotChart = ({ data, isYearly }) => {
-  const chartRef = useRef(null);
   const [chartData, setChartData] = useState(null);
-
-  const calculateYearlyData = (data) => {
-    if (!data.years || !data.yearly_averages || !data.yearly_stddev) return null;
-
-    return {
-      labels: data.years,
-      datasets: [
-        {
-          label: "Yearly Average Temperature",
-          data: data.yearly_averages,
-          borderColor: "blue",
-          borderWidth: 2,
-          fill: false,
-        },
-        {
-          label: "+1σ",
-          data: data.yearly_averages.map((avg, i) => avg + data.yearly_stddev[i]),
-          borderColor: "red",
-          borderDash: [5, 5],
-          borderWidth: 1,
-          fill: false,
-        },
-        {
-          label: "-1σ",
-          data: data.yearly_averages.map((avg, i) => avg - data.yearly_stddev[i]),
-          borderColor: "green",
-          borderDash: [5, 5],
-          borderWidth: 1,
-          fill: false,
-        },
-      ],
-    };
-  };
-
-  const calculateMonthlyData = (data) => {
-    if (!data.monthly_data || !data.years) return null;
-
-    const labels = [];
-    const values = [];
-
-    Object.entries(data.monthly_data).forEach(([month, temps]) => {
-      temps.forEach((temp, i) => {
-        labels.push(`${data.years[i]}-${month}`);
-        values.push(temp);
-      });
-    });
-
-    return {
-      labels,
-      datasets: [
-        {
-          label: "Monthly Temperature (°C)",
-          data: values,
-          borderColor: "blue",
-          borderWidth: 2,
-          pointRadius: 2,
-          fill: false,
-        },
-      ],
-    };
-  };
+  const [xAxisTitle, setXAxisTitle] = useState(isYearly ? "Years" : "Months");
+  const [selectedYear, setSelectedYear] = useState(""); // Year picker state for monthly view
+  const chartRef = useRef(null);
 
   useEffect(() => {
-    if (!data) return;
+    if (data) {
+      if (isYearly) {
+        // Yearly data
+        setChartData({
+          labels: data.years,
+          datasets: [
+            {
+              label: "Yearly Average Temperature",
+              data: data.yearly_averages,
+              borderColor: "blue",
+              fill: false,
+            },
+            {
+              label: "+1σ",
+              data: data.yearly_averages.map((v, i) => v + data.yearly_stddev[i]),
+              borderColor: "red",
+              borderDash: [5, 5],
+              fill: false,
+            },
+            {
+              label: "-1σ",
+              data: data.yearly_averages.map((v, i) => v - data.yearly_stddev[i]),
+              borderColor: "green",
+              borderDash: [5, 5],
+              fill: false,
+            },
+          ],
+        });
+        setXAxisTitle("Years");
+      } else {
+        // Monthly data
+        const monthlyLabels = [];
+        const monthlyValues = [];
 
-    const updatedData = isYearly ? calculateYearlyData(data) : calculateMonthlyData(data);
-    if (!updatedData) {
-      console.error("Invalid data structure:", data);
-      return;
+        data.years.forEach((year, yearIndex) => {
+          Object.keys(data.monthly_data).forEach((month) => {
+            monthlyLabels.push(`${year}-${month}`);
+            monthlyValues.push(data.monthly_data[month][yearIndex]);
+          });
+        });
+
+        // Filter data by selected year (if any)
+        const filteredLabels = selectedYear
+          ? monthlyLabels.filter((label) => label.startsWith(selectedYear))
+          : monthlyLabels;
+        const filteredValues = selectedYear
+          ? monthlyValues.filter((_, index) => monthlyLabels[index].startsWith(selectedYear))
+          : monthlyValues;
+
+        setChartData({
+          labels: filteredLabels,
+          datasets: [
+            {
+              label: "Monthly Temperature",
+              data: filteredValues,
+              borderColor: "blue",
+              fill: false,
+            },
+          ],
+        });
+
+        setXAxisTitle(selectedYear ? `Months of ${selectedYear}` : "Months");
+      }
     }
-    setChartData(updatedData);
-  }, [data, isYearly]);
+  }, [data, isYearly, selectedYear]);
+
+  const handleYearChange = (event) => {
+    setSelectedYear(event.target.value);
+  };
 
   const resetZoom = () => {
     if (chartRef.current) {
       chartRef.current.resetZoom();
     }
+    // Keep the year picker intact; only reset the zoom
+    setXAxisTitle(selectedYear ? `Months of ${selectedYear}` : isYearly ? "Years" : "Months");
   };
 
-  if (!chartData) return <p>Loading chart...</p>;
+  if (!chartData) return null;
 
   return (
     <div>
+      {!isYearly && (
+        <div style={{ marginBottom: "20px" }}>
+          <label htmlFor="year-picker" style={{ marginRight: "10px" }}>
+            Select Year:
+          </label>
+          <select
+            id="year-picker"
+            value={selectedYear}
+            onChange={handleYearChange}
+            style={{
+              padding: "5px",
+              border: "1px solid #ccc",
+              borderRadius: "5px",
+              fontSize: "14px",
+            }}
+          >
+            <option value="">--All Years--</option>
+            {data.years.map((year) => (
+              <option key={year} value={year}>
+                {year}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
       <Line
         ref={chartRef}
         data={chartData}
         options={{
           responsive: true,
           plugins: {
+            legend: { display: true },
             tooltip: {
               callbacks: {
                 label: function (context) {
+                  // Customize the tooltip label
                   const value = context.raw;
                   return `${context.dataset.label}: ${value.toFixed(2)}°C`;
                 },
               },
             },
-            legend: { display: true },
             zoom: {
               pan: {
                 enabled: true,
-                mode: "x", // Enable panning along the x-axis
+                mode: "x",
               },
               zoom: {
-                wheel: { enabled: true }, // Enable zooming with the mouse wheel
-                pinch: { enabled: true }, // Enable zooming with pinch gestures
-                mode: "x", // Enable zooming along the x-axis
+                wheel: { enabled: true },
+                pinch: { enabled: true },
+                mode: "x",
               },
             },
           },
           scales: {
-            x: { title: { display: true, text: isYearly ? "Years" : "Year-Month" } },
+            x: { title: { display: true, text: xAxisTitle } },
             y: { title: { display: true, text: "Temperature (°C)" } },
           },
         }}
       />
       <button
         onClick={resetZoom}
-        className="px-4 py-2 mt-4 bg-blue-500 text-white rounded shadow hover:bg-blue-600 transition"
+        className="mt-4 px-4 py-2 bg-blue-500 text-white rounded shadow hover:bg-blue-600 transition"
       >
         Reset Zoom
       </button>
