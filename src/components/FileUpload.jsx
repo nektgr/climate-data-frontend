@@ -1,6 +1,8 @@
-import React from "react";
+import React, { useRef } from "react";
 
-const FileUpload = ({ setChartData, setError, fileInputRef }) => {
+const FileUpload = ({ setChartData, setError, resetRef }) => {
+  const fileInputRef = useRef(null); // Ref for the file input
+
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
     if (!file || file.type !== "text/csv") {
@@ -29,7 +31,9 @@ const FileUpload = ({ setChartData, setError, fileInputRef }) => {
       const { file_path } = await uploadResponse.json();
 
       // Process file
-      const processResponse = await fetch(`http://localhost:8000/api/process/?file_name=${encodeURIComponent(file.name)}`);
+      const processResponse = await fetch(
+        `http://localhost:8000/api/process/?file_name=${encodeURIComponent(file.name)}`
+      );
       if (!processResponse.ok) {
         const error = await processResponse.json();
         throw new Error(error.detail || "File processing failed.");
@@ -42,6 +46,17 @@ const FileUpload = ({ setChartData, setError, fileInputRef }) => {
       setError(err.message);
     }
   };
+
+  const clearFileInput = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ""; // Clear the file input value
+    }
+  };
+
+  // Allow the parent component to trigger reset
+  React.useImperativeHandle(resetRef, () => ({
+    resetFileInput: clearFileInput,
+  }));
 
   return (
     <div>

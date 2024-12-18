@@ -1,24 +1,30 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import FileUpload from "./components/FileUpload";
 import PlotChart from "./components/PlotChart";
+import ThemeToggle from "./components/ThemeToggle";
 
 const App = () => {
   const [chartData, setChartData] = useState(null);
   const [error, setError] = useState(null);
   const [isYearly, setIsYearly] = useState(true);
+  const fileUploadResetRef = useRef(null); // Ref to trigger file input reset
 
   const toggleView = () => {
     setIsYearly((prev) => !prev);
   };
 
   const resetApp = () => {
-    setChartData(null);
-    setError(null);
-    setIsYearly(true); // Reset to default view
+    setChartData(null); // Clear chart data
+    setError(null); // Clear error
+    setIsYearly(true); // Reset view to yearly
+    if (fileUploadResetRef.current) {
+      fileUploadResetRef.current.resetFileInput(); // Clear file input
+    }
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 dark:text-white flex flex-col items-center justify-center p-4">
+      <ThemeToggle />
       <h1 className="text-3xl font-bold mb-6">Climate Data Visualization</h1>
       {error && (
         <div
@@ -34,7 +40,11 @@ const App = () => {
           {error}
         </div>
       )}
-      <FileUpload setChartData={setChartData} setError={setError} />
+      <FileUpload
+        setChartData={setChartData}
+        setError={setError}
+        resetRef={fileUploadResetRef}
+      />
       {chartData ? (
         <div className="mt-6 w-full max-w-6xl">
           <div className="mb-4 flex justify-between items-center">

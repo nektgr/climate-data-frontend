@@ -11,10 +11,12 @@ import {
   Title,
 } from "chart.js";
 import zoomPlugin from "chartjs-plugin-zoom";
+import { useTheme } from "../ThemeContext"; // Use the `useTheme` hook instead
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend, Title, zoomPlugin);
 
 const PlotChart = ({ data, isYearly }) => {
+  const { isDarkMode } = useTheme(); // Access the theme state
   const [chartData, setChartData] = useState(null);
   const [xAxisTitle, setXAxisTitle] = useState(isYearly ? "Years" : "Months");
   const [selectedYear, setSelectedYear] = useState(""); // Year picker state for monthly view
@@ -31,6 +33,7 @@ const PlotChart = ({ data, isYearly }) => {
               label: "Yearly Average Temperature",
               data: data.yearly_averages,
               borderColor: "blue",
+              borderWidth: 3,
               fill: false,
             },
             {
@@ -38,6 +41,7 @@ const PlotChart = ({ data, isYearly }) => {
               data: data.yearly_averages.map((v, i) => v + data.yearly_stddev[i]),
               borderColor: "red",
               borderDash: [5, 5],
+              borderWidth: 2,
               fill: false,
             },
             {
@@ -45,6 +49,7 @@ const PlotChart = ({ data, isYearly }) => {
               data: data.yearly_averages.map((v, i) => v - data.yearly_stddev[i]),
               borderColor: "green",
               borderDash: [5, 5],
+              borderWidth: 2,
               fill: false,
             },
           ],
@@ -77,6 +82,8 @@ const PlotChart = ({ data, isYearly }) => {
               label: "Monthly Temperature",
               data: filteredValues,
               borderColor: "blue",
+              borderWidth: 3,
+              pointRadius: 3,
               fill: false,
             },
           ],
@@ -105,19 +112,16 @@ const PlotChart = ({ data, isYearly }) => {
     <div>
       {!isYearly && (
         <div style={{ marginBottom: "20px" }}>
-          <label htmlFor="year-picker" style={{ marginRight: "10px" }}>
+          <label htmlFor="year-picker" style={{ marginRight: "10px", color: isDarkMode ? "white" : "black" }}>
             Select Year:
           </label>
           <select
             id="year-picker"
             value={selectedYear}
             onChange={handleYearChange}
-            style={{
-              padding: "5px",
-              border: "1px solid #ccc",
-              borderRadius: "5px",
-              fontSize: "14px",
-            }}
+            className={`p-2 border rounded ${
+              isDarkMode ? "bg-gray-800 text-white border-gray-600" : "bg-white text-black border-gray-300"
+            }`}
           >
             <option value="">--All Years--</option>
             {data.years.map((year) => (
@@ -134,7 +138,12 @@ const PlotChart = ({ data, isYearly }) => {
         options={{
           responsive: true,
           plugins: {
-            legend: { display: true },
+            legend: {
+              display: true,
+              labels: {
+                color: isDarkMode ? "white" : "black", // Adjust legend text color
+              },
+            },
             tooltip: {
               callbacks: {
                 label: function (context) {
@@ -157,8 +166,16 @@ const PlotChart = ({ data, isYearly }) => {
             },
           },
           scales: {
-            x: { title: { display: true, text: xAxisTitle } },
-            y: { title: { display: true, text: "Temperature (°C)" } },
+            x: {
+              title: { display: true, text: xAxisTitle, color: isDarkMode ? "white" : "black" },
+              ticks: { color: isDarkMode ? "white" : "black" },
+              grid: { color: isDarkMode ? "#444" : "#ddd" },
+            },
+            y: {
+              title: { display: true, text: "Temperature (°C)", color: isDarkMode ? "white" : "black" },
+              ticks: { color: isDarkMode ? "white" : "black" },
+              grid: { color: isDarkMode ? "#444" : "#ddd" },
+            },
           },
         }}
       />
