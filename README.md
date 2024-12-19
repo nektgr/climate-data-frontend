@@ -69,6 +69,8 @@ climate-data-frontend/
 │   │   └── chartConfig.js
 │   ├── utils/                        # Utility functions
 │   │   └── generateChartData.js
+|   |   └── fileUtils.js
+|   |   └── chartUtils.js
 │   ├── App.jsx                       # Main App component
 │   ├── index.js                      # App entry point
 │   ├── App.css                       # Global styling for App
