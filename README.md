@@ -1,70 +1,107 @@
-# Getting Started with Create React App
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+# Climate Data Visualization
 
-## Available Scripts
+This project is a React-based frontend application for uploading climate data files and visualizing them in interactive charts. The app integrates with a backend API to process CSV files containing climate data and displays the results as yearly and monthly temperature trends.
 
-In the project directory, you can run:
+## Features
 
-### `npm start`
+- **File Upload**: Upload CSV files to the backend for processing.
+- **Interactive Charts**: Visualize yearly and monthly temperature trends with options to switch views and select specific years.
+- **Dark Mode Support**: Toggle between light and dark themes.
+- **Error Handling**: Displays user-friendly error messages for invalid file uploads or processing issues.
+- **Responsive Design**: Optimized for desktops and mobile devices.
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+## Prerequisites
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+Ensure the following are installed on your system:
 
-### `npm test`
+- Node.js (version 16 or higher)
+- npm or Yarn (for package management)
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## Installation
 
-### `npm run build`
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/nektgr/climate-data-frontend.git
+   cd climate-data-frontend
+   ```
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+2. Install dependencies:
+   - Using npm:
+     ```bash
+     npm install
+     ```
+   - Or using Yarn:
+     ```bash
+     yarn install
+     ```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## Running the Application
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+1. Start the development server:
+   - Using npm:
+     ```bash
+     npm start
+     ```
+   - Or using Yarn:
+     ```bash
+     yarn start
+     ```
 
-### `npm run eject`
+2. Open your browser and navigate to:
+   ```
+   http://localhost:3000
+   ```
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+## Project Structure
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+```plaintext
+climate-data-frontend/
+├── public/
+│   └── index.html                    # Main HTML template
+├── src/
+│   ├── components/                   # React components
+│   │   ├── FileUpload.jsx
+│   │   ├── PlotChart.jsx
+│   │   └── ThemeToggle.jsx
+│   ├── config/                       # Configuration files
+│   │   └── chartConfig.js
+│   ├── utils/                        # Utility functions
+│   │   └── generateChartData.js
+│   ├── App.jsx                       # Main App component
+│   ├── index.js                      # App entry point
+│   ├── App.css                       # Global styling for App
+│   └── index.css                     # Global CSS
+├── .gitignore                        # Git ignore file
+├── Dockerfile                        # Docker configuration
+├── package.json                      # Project dependencies
+├── README.md                         # Project documentation
+└── tailwind.config.js                # Tailwind CSS configuration
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+```
 
-## Learn More
+## Notes
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+- Ensure the backend API is running and accessible at the configured `BASE_URL`.
+- Use the same CORS settings on the backend to allow requests from `http://localhost:3000` during development.
+- For production, adjust the API URL and deploy the frontend accordingly.
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+## Deployment
 
-### Code Splitting
+1. Build the project:
+   - Using npm:
+     ```bash
+     npm run build
+     ```
+   - Or using Yarn:
+     ```bash
+     yarn build
+     ```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+2. Serve the `build/` directory using a static server or deploy it to a hosting service like Netlify, Vercel, or AWS.
 
-### Analyzing the Bundle Size
+## Notes
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+- Ensure the backend and frontend configurations are aligned in production.
+- Always validate your CSV files before uploading to avoid processing errors.

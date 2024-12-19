@@ -14,17 +14,32 @@ import zoomPlugin from "chartjs-plugin-zoom";
 import { useTheme } from "../ThemeContext";
 import PropTypes from "prop-types";
 
+// Register Chart.js components and plugins
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend, Title, zoomPlugin);
 
+/**
+ * PlotChart component
+ * Renders a line chart with yearly or monthly data, supporting zoom and pan functionalities.
+ *
+ * Props:
+ * - data: Chart data including labels and values.
+ * - isYearly: Boolean indicating if the chart is for yearly or monthly data.
+ * - selectedYear: Currently selected year for filtering monthly data.
+ * - onYearChange: Function to handle year selection changes.
+ */
 const PlotChart = ({ data, isYearly, selectedYear, onYearChange }) => {
-  const { isDarkMode } = useTheme();
-  const [chartData, setChartData] = useState(null);
-  const [xAxisTitle, setXAxisTitle] = useState(isYearly ? "Years" : "Months");
-  const chartRef = useRef(null);
+  const { isDarkMode } = useTheme(); // Theme context for dark/light mode
+  const [chartData, setChartData] = useState(null); // State for chart data
+  const [xAxisTitle, setXAxisTitle] = useState(isYearly ? "Years" : "Months"); // X-axis title
+  const chartRef = useRef(null); // Reference to the chart instance
 
+  /**
+   * Updates the chart data and labels based on the selected view (yearly/monthly).
+   */
   useEffect(() => {
     if (data) {
       if (isYearly) {
+        // Prepare data for yearly view
         setChartData({
           labels: data.years,
           datasets: [
@@ -55,6 +70,7 @@ const PlotChart = ({ data, isYearly, selectedYear, onYearChange }) => {
         });
         setXAxisTitle("Years");
       } else {
+        // Prepare data for monthly view
         const monthlyLabels = [];
         const monthlyValues = [];
         data.years.forEach((year, yearIndex) => {
@@ -64,6 +80,7 @@ const PlotChart = ({ data, isYearly, selectedYear, onYearChange }) => {
           });
         });
 
+        // Filter labels and values if a year is selected
         const filteredLabels = selectedYear
           ? monthlyLabels.filter((label) => label.startsWith(selectedYear))
           : monthlyLabels;
@@ -89,6 +106,9 @@ const PlotChart = ({ data, isYearly, selectedYear, onYearChange }) => {
     }
   }, [data, isYearly, selectedYear]);
 
+  /**
+   * Resets the chart zoom and updates the X-axis title.
+   */
   const resetZoom = () => {
     if (chartRef.current) {
       chartRef.current.resetZoom();
@@ -96,13 +116,18 @@ const PlotChart = ({ data, isYearly, selectedYear, onYearChange }) => {
     setXAxisTitle(selectedYear ? `Months of ${selectedYear}` : isYearly ? "Years" : "Months");
   };
 
+  // Return null if no chart data is available
   if (!chartData) return null;
 
   return (
     <div>
       {!isYearly && (
         <div style={{ marginBottom: "20px" }}>
-          <label htmlFor="year-picker" style={{ marginRight: "10px", color: isDarkMode ? "white" : "black" }}>
+          {/* Dropdown for year selection */}
+          <label
+            htmlFor="year-picker"
+            style={{ marginRight: "10px", color: isDarkMode ? "white" : "black" }}
+          >
             Select Year:
           </label>
           <select
@@ -122,6 +147,7 @@ const PlotChart = ({ data, isYearly, selectedYear, onYearChange }) => {
           </select>
         </div>
       )}
+      {/* Line chart */}
       <Line
         ref={chartRef}
         data={chartData}
@@ -158,6 +184,7 @@ const PlotChart = ({ data, isYearly, selectedYear, onYearChange }) => {
           },
         }}
       />
+      {/* Reset zoom button */}
       <button
         onClick={resetZoom}
         className="mt-4 px-4 py-2 bg-blue-500 text-white rounded shadow hover:bg-blue-600 transition"
@@ -168,6 +195,7 @@ const PlotChart = ({ data, isYearly, selectedYear, onYearChange }) => {
   );
 };
 
+// Define expected prop types for the component
 PlotChart.propTypes = {
   data: PropTypes.object.isRequired,
   isYearly: PropTypes.bool.isRequired,
