@@ -7,20 +7,24 @@ const App = () => {
   const [chartData, setChartData] = useState(null);
   const [error, setError] = useState(null);
   const [isYearly, setIsYearly] = useState(true);
-  const fileUploadResetRef = useRef(null); // Ref to trigger file input reset
+  const [selectedYear, setSelectedYear] = useState(""); // Added year selection state
+  const fileUploadResetRef = useRef(null);
 
   const toggleView = () => {
     setIsYearly((prev) => !prev);
   };
 
   const resetApp = () => {
-    setChartData(null); // Clear chart data
-    setError(null); // Clear error
-    setIsYearly(true); // Reset view to yearly
+    setChartData(null);
+    setError(null);
+    setIsYearly(true);
+    setSelectedYear(""); // Reset year selection
     if (fileUploadResetRef.current) {
-      fileUploadResetRef.current.resetFileInput(); // Clear file input
+      fileUploadResetRef.current.resetFileInput();
     }
   };
+
+  const handleYearChange = (event) => setSelectedYear(event.target.value); // Added year change handler
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 dark:text-white flex flex-col items-center justify-center p-4">
@@ -61,7 +65,12 @@ const App = () => {
               Reset
             </button>
           </div>
-          <PlotChart data={chartData} isYearly={isYearly} />
+          <PlotChart
+            data={chartData}
+            isYearly={isYearly}
+            selectedYear={selectedYear} 
+            onYearChange={handleYearChange} 
+          />
         </div>
       ) : (
         <p className="text-gray-500 mt-6">Upload a file to see the chart.</p>

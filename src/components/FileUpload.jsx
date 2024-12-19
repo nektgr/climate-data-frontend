@@ -1,7 +1,8 @@
 import React, { useRef } from "react";
+import PropTypes from "prop-types";
 
 const FileUpload = ({ setChartData, setError, resetRef }) => {
-  const fileInputRef = useRef(null); // Ref for the file input
+  const fileInputRef = useRef(null);
 
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
@@ -17,7 +18,6 @@ const FileUpload = ({ setChartData, setError, resetRef }) => {
     formData.append("file", file);
 
     try {
-      // Upload file to backend
       const uploadResponse = await fetch("http://localhost:8000/api/upload/", {
         method: "POST",
         body: formData,
@@ -30,10 +30,10 @@ const FileUpload = ({ setChartData, setError, resetRef }) => {
 
       const { file_path } = await uploadResponse.json();
 
-      // Process file
       const processResponse = await fetch(
-        `http://localhost:8000/api/process/?file_name=${encodeURIComponent(file.name)}`
+        `http://localhost:8000/api/process/?file_name=${encodeURIComponent(file_path)}`
       );
+
       if (!processResponse.ok) {
         const error = await processResponse.json();
         throw new Error(error.detail || "File processing failed.");
@@ -49,11 +49,10 @@ const FileUpload = ({ setChartData, setError, resetRef }) => {
 
   const clearFileInput = () => {
     if (fileInputRef.current) {
-      fileInputRef.current.value = ""; // Clear the file input value
+      fileInputRef.current.value = "";
     }
   };
 
-  // Allow the parent component to trigger reset
   React.useImperativeHandle(resetRef, () => ({
     resetFileInput: clearFileInput,
   }));
@@ -69,6 +68,12 @@ const FileUpload = ({ setChartData, setError, resetRef }) => {
       />
     </div>
   );
+};
+
+FileUpload.propTypes = {
+  setChartData: PropTypes.func.isRequired,
+  setError: PropTypes.func.isRequired,
+  resetRef: PropTypes.object.isRequired,
 };
 
 export default FileUpload;

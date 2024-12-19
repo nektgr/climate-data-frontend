@@ -11,21 +11,20 @@ import {
   Title,
 } from "chart.js";
 import zoomPlugin from "chartjs-plugin-zoom";
-import { useTheme } from "../ThemeContext"; // Use the `useTheme` hook instead
+import { useTheme } from "../ThemeContext";
+import PropTypes from "prop-types";
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend, Title, zoomPlugin);
 
-const PlotChart = ({ data, isYearly }) => {
-  const { isDarkMode } = useTheme(); // Access the theme state
+const PlotChart = ({ data, isYearly, selectedYear, onYearChange }) => {
+  const { isDarkMode } = useTheme();
   const [chartData, setChartData] = useState(null);
   const [xAxisTitle, setXAxisTitle] = useState(isYearly ? "Years" : "Months");
-  const [selectedYear, setSelectedYear] = useState(""); // Year picker state for monthly view
   const chartRef = useRef(null);
 
   useEffect(() => {
     if (data) {
       if (isYearly) {
-        // Yearly data
         setChartData({
           labels: data.years,
           datasets: [
@@ -56,10 +55,8 @@ const PlotChart = ({ data, isYearly }) => {
         });
         setXAxisTitle("Years");
       } else {
-        // Monthly data
         const monthlyLabels = [];
         const monthlyValues = [];
-
         data.years.forEach((year, yearIndex) => {
           Object.keys(data.monthly_data).forEach((month) => {
             monthlyLabels.push(`${year}-${month}`);
@@ -67,7 +64,6 @@ const PlotChart = ({ data, isYearly }) => {
           });
         });
 
-        // Filter data by selected year (if any)
         const filteredLabels = selectedYear
           ? monthlyLabels.filter((label) => label.startsWith(selectedYear))
           : monthlyLabels;
@@ -88,21 +84,15 @@ const PlotChart = ({ data, isYearly }) => {
             },
           ],
         });
-
         setXAxisTitle(selectedYear ? `Months of ${selectedYear}` : "Months");
       }
     }
   }, [data, isYearly, selectedYear]);
 
-  const handleYearChange = (event) => {
-    setSelectedYear(event.target.value);
-  };
-
   const resetZoom = () => {
     if (chartRef.current) {
       chartRef.current.resetZoom();
     }
-    // Keep the year picker intact; only reset the zoom
     setXAxisTitle(selectedYear ? `Months of ${selectedYear}` : isYearly ? "Years" : "Months");
   };
 
@@ -118,7 +108,7 @@ const PlotChart = ({ data, isYearly }) => {
           <select
             id="year-picker"
             value={selectedYear}
-            onChange={handleYearChange}
+            onChange={onYearChange}
             className={`p-2 border rounded ${
               isDarkMode ? "bg-gray-800 text-white border-gray-600" : "bg-white text-black border-gray-300"
             }`}
@@ -141,28 +131,17 @@ const PlotChart = ({ data, isYearly }) => {
             legend: {
               display: true,
               labels: {
-                color: isDarkMode ? "white" : "black", // Adjust legend text color
+                color: isDarkMode ? "white" : "black",
               },
             },
             tooltip: {
               callbacks: {
-                label: function (context) {
-                  // Customize the tooltip label
-                  const value = context.raw;
-                  return `${context.dataset.label}: ${value.toFixed(2)}°C`;
-                },
+                label: (context) => `${context.dataset.label}: ${context.raw.toFixed(2)}°C`,
               },
             },
             zoom: {
-              pan: {
-                enabled: true,
-                mode: "x",
-              },
-              zoom: {
-                wheel: { enabled: true },
-                pinch: { enabled: true },
-                mode: "x",
-              },
+              pan: { enabled: true, mode: "x" },
+              zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: "x" },
             },
           },
           scales: {
@@ -187,6 +166,13 @@ const PlotChart = ({ data, isYearly }) => {
       </button>
     </div>
   );
+};
+
+PlotChart.propTypes = {
+  data: PropTypes.object.isRequired,
+  isYearly: PropTypes.bool.isRequired,
+  selectedYear: PropTypes.string,
+  onYearChange: PropTypes.func,
 };
 
 export default PlotChart;
